@@ -1,0 +1,347 @@
+/* ================================
+   GLOBAL UI VARIABLES
+================================ */
+:root {
+  --primary: #0f766e;
+  --primary-dark: #115e59;
+  --background: #f4f6f9;
+  --card-bg: #ffffff;
+  --text-dark: #1f2937;
+  --accent: #f59e0b;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+/* ================================
+   RESET & BASE
+================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--text-dark);
+}
+
+/* ================================
+   BUTTONS
+================================ */
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* ================================
+   FORM ELEMENTS
+================================ */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+/* ================================
+   MODAL
+================================ */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  width: 320px;
+  text-align: center;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #d1f2eb;
+    color: #0b5345;
+}
+
+.badge-danger {
+    background: #f9d6d5;
+    color: #922b21;
+}
+
+.app-container {
+    display: flex;
+}
+
+.main-content {
+    flex: 1;
+    padding: 25px;
+}
+
+.page-title {
+    margin-bottom: 15px;
+}
+
+.action-bar {
+    margin-bottom: 15px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table thead th {
+    text-align: left;
+    padding: 12px;
+    background: #f5f7fa;
+    font-weight: 600;
+}
+
+.table tbody td {
+    padding: 12px;
+    border-top: 1px solid #eee;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.badge-warning {
+    background: #fde68a;
+    color: #92400e;
+}
+
+.btn {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    text-decoration: none;
+    margin-right: 5px;
+    display: inline-block;
+}
+
+.btn-success {
+    background: #16a34a;
+    color: #fff;
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: #fff;
+}
+
+.btn-sm {
+    font-size: 11px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.form-grid label {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.form-grid input,
+.form-grid select {
+    width: 100%;
+    padding: 8px;
+}
+
+.badge-success {
+    background: #dcfce7;
+    color: #166534;
+    padding: 6px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    font-size: 12px;
+}
+
+.badge-warning {
+    background: #fde68a;
+    color: #92400e;
+    padding: 6px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    font-size: 12px;
+}
+
+.badge-danger {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 6px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    font-size: 12px;
+}
+
+/* ================================
+   LAYOUT FIX (IMPORTANT)
+================================ */
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.main {
+    flex: 1;
+    padding: 25px;
+    background: var(--background);
+    overflow-y: auto;
+}
+
+/* === FORCE MAIN CONTENT VISIBILITY FIX === */
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.main-content {
+    flex: 1;
+    padding: 25px;
+    overflow-x: auto;
+    background: var(--background);
+}
+
+/* ================================
+   STANDARD DATA TABLE (GLOBAL)
+================================ */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table thead th {
+    background: #f8fafc;
+    padding: 14px;
+    font-size: 14px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.data-table tbody td {
+    padding: 14px;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.data-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+.data-table .action-col {
+    width: 120px;
+}
+
+/* ===== PAGE HEADER ===== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* ===== CARD ===== */
+.card {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+}
+
+/* ===== TABLE STANDARD ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table th,
+table td {
+    padding: 14px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    font-size: 14px;
+}
+
+table th {
+    background: #f8fafc;
+    font-weight: 600;
+}
+
+/* ===== STATUS BADGES ===== */
+.status {
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status.inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
