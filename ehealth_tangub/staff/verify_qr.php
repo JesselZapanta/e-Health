@@ -14,7 +14,7 @@ $result = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $appointment_id = (int)$_POST['appointment_id'];
+    $qr_code = mysqli_real_escape_string($conn, $_POST['qr_code']); // sanitize input
 
     $query = mysqli_query(
         $conn,
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
          FROM appointments a
          JOIN patients p ON a.patient_id = p.patient_id
          JOIN users u ON p.user_id = u.user_id
-         WHERE a.appointment_id = $appointment_id"
+         WHERE a.qr_code = '$qr_code'"
     );
 
     if (mysqli_num_rows($query) > 0) {
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $conn,
                 "UPDATE appointments 
                  SET status = 'Completed' 
-                 WHERE appointment_id = $appointment_id"
+                 WHERE appointment_id = {$result['appointment_id']}"
             );
 
             $result['verified'] = true;
@@ -77,48 +77,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <?php require_once "../layouts/topbar.php"; ?>
 
-        <h3 class="page-title">QR Verification</h3>
+        <div>
+            <h3 class="page-title">Code Verification</h3>
 
-        <!-- INPUT CARD -->
-        <div class="card" style="max-width:420px;margin-bottom:20px;">
-            <form method="POST">
-                <label>Enter Appointment ID</label>
-                <input type="number" name="appointment_id" required>
+            <!-- INPUT CARD -->
+            <div class="card" style="max-width:420px;margin-bottom:20px;">
+                <form method="POST">
+                    <div class="form-group">
+                        <label>Enter Code</label>
+                        <input type="text" name="qr_code" required>
+                    </div>
 
-                <button type="submit" class="btn-primary" style="margin-top:10px;">
-                    Verify Appointment
-                </button>
-            </form>
-        </div>
-
-        <!-- RESULT -->
-        <?php if ($result): ?>
-            <div class="card">
-
-                <?php if (!empty($result['verified'])): ?>
-                    <span class="badge badge-success">Checked In Successfully</span>
-
-                <?php elseif (!empty($result['already_checked'])): ?>
-                    <span class="badge badge-warning">Already Checked In</span>
-
-                <?php elseif (!empty($result['invalid'])): ?>
-                    <span class="badge badge-danger">Appointment Not Approved</span>
-
-                <?php elseif (!empty($result['not_found'])): ?>
-                    <span class="badge badge-danger">Appointment Not Found</span>
-
-                <?php endif; ?>
-
-                <?php if (isset($result['patient_name'])): ?>
-                    <hr style="margin:15px 0;">
-                    <p><strong>Patient:</strong> <?= htmlspecialchars($result['patient_name']) ?></p>
-                    <p><strong>Date:</strong> <?= $result['appointment_date'] ?></p>
-                    <p><strong>Time:</strong> <?= $result['appointment_time'] ?></p>
-                    <p><strong>Status:</strong> <?= $result['status'] ?></p>
-                <?php endif; ?>
-
+                    <button type="submit" class="btn-primary" style="margin-top:10px;">
+                        Verify Appointment
+                    </button>
+                </form>
             </div>
-        <?php endif; ?>
+
+            <!-- RESULT -->
+            <?php if ($result): ?>
+                <div class="card">
+
+                    <?php if (!empty($result['verified'])): ?>
+                        <span class="badge badge-success">Checked In Successfully</span>
+
+                    <?php elseif (!empty($result['already_checked'])): ?>
+                        <span class="badge badge-warning">Already Checked In</span>
+
+                    <?php elseif (!empty($result['invalid'])): ?>
+                        <span class="badge badge-danger">Appointment Not Approved</span>
+
+                    <?php elseif (!empty($result['not_found'])): ?>
+                        <span class="badge badge-danger">Appointment Not Found</span>
+
+                    <?php endif; ?>
+
+                    <?php if (isset($result['patient_name'])): ?>
+                        <hr style="margin:15px 0;">
+                        <p><strong>Patient:</strong> <?= htmlspecialchars($result['patient_name']) ?></p>
+                        <p><strong>Date:</strong> <?= $result['appointment_date'] ?></p>
+                        <p><strong>Time:</strong> <?= $result['appointment_time'] ?></p>
+                        <p><strong>Status:</strong> <?= $result['status'] ?></p>
+                    <?php endif; ?>
+
+                </div>
+            <?php endif; ?>
+        </div>
 
     </main>
 </div>

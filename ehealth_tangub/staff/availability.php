@@ -40,6 +40,7 @@ $availability = mysqli_query($conn, "
 
 <div class="card" style="margin-bottom:25px;">
 <form method="POST" action="save_availabity.php" class="form-grid">
+<!-- <form method="POST" action="save_availabity.php" > -->
 
     <div class="form-group">
         <label>Doctor</label>
@@ -67,11 +68,14 @@ $availability = mysqli_query($conn, "
         <label>End Time</label>
         <input type="time" name="end_time" required>
     </div>
+    <div class="form-group">
+        <label>Slots</label>
+        <input type="text" name="slots" required>
+    </div>
 
     <div class="form-group full">
         <button class="btn-primary">Save Availability</button>
     </div>
-
 </form>
 </div>
 
@@ -82,6 +86,7 @@ $availability = mysqli_query($conn, "
     <th>Doctor</th>
     <th>Date</th>
     <th>Time Range</th>
+    <th>Slots</th>
     <th>Status</th>
 </tr>
 </thead>
@@ -97,8 +102,13 @@ $availability = mysqli_query($conn, "
     <td><?= htmlspecialchars($a['full_name']) ?></td>
     <td><?= $a['available_date'] ?></td>
     <td><?= date("h:i A", strtotime($a['start_time'])) ?> – <?= date("h:i A", strtotime($a['end_time'])) ?></td>
+    <td><?= $a['slots'] ?></td>
     <td>
-        <span class="status active">Available</span>
+        <?php if ($a['slots'] > 0): ?>
+            <span class="status active">Available</span>
+        <?php else: ?>
+            <span class="status">Booked</span>
+        <?php endif; ?>
     </td>
 </tr>
 <?php endwhile; ?>

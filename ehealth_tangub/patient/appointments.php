@@ -20,6 +20,7 @@ $appointments = mysqli_query($conn, "
         a.appointment_date,
         a.appointment_time,
         a.status,
+        a.qr_code,
         u.full_name AS doctor_name
     FROM appointments a
     JOIN users u ON a.doctor_id = u.user_id
@@ -58,6 +59,7 @@ $appointments = mysqli_query($conn, "
                 <th>Date</th>
                 <th>Time</th>
                 <th>Status</th>
+                <th>Code</th>
             </tr>
         </thead>
         <tbody>
@@ -72,6 +74,7 @@ $appointments = mysqli_query($conn, "
                                 <?= ucfirst($row['status']) ?>
                             </span>
                         </td>
+                        <td><?= $row['qr_code'] ?></td>
                     </tr>
                 <?php endwhile; ?>
             <?php else: ?>

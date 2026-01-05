@@ -99,7 +99,7 @@ $current = basename($_SERVER['PHP_SELF']);
             </a>
 
             <a href="verify_qr.php">
-                🔍 <span>QR Verification</span>
+                🔍 <span>Code Verification</span>
             </a>
 
             <a href="inventory.php">
