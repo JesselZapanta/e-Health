@@ -19,7 +19,6 @@ $appointments = mysqli_query($conn, "
     JOIN patients p ON a.patient_id = p.patient_id
     JOIN users u ON p.user_id = u.user_id
     JOIN users d ON a.doctor_id = d.user_id
-    WHERE a.status = 'pending'
     ORDER BY a.created_at ASC
 ");
 ?>
@@ -49,7 +48,7 @@ $appointments = mysqli_query($conn, "
     <th>Date</th>
     <th>Time</th>
     <th>Status</th>
-    <th style="width:180px;">Action</th>
+    <!-- <th style="width:180px;">Action</th> -->
 </tr>
 </thead>
 <tbody>
@@ -67,9 +66,9 @@ $appointments = mysqli_query($conn, "
     <td><?= $a['appointment_date'] ?></td>
     <td><?= date("h:i A", strtotime($a['appointment_time'])) ?></td>
     <td>
-        <span class="badge badge-warning">Pending</span>
+        <span class="badge badge-warning"><?= $a['status'] ?></span>
     </td>
-    <td>
+    <!-- <td>
         <form method="POST" action="update_appointment.php" style="display:inline;">
             <input type="hidden" name="id" value="<?= $a['appointment_id'] ?>">
             <input type="hidden" name="action" value="approve">
@@ -81,7 +80,7 @@ $appointments = mysqli_query($conn, "
             <input type="hidden" name="action" value="deny">
             <button class="btn btn-danger btn-sm">Deny</button>
         </form>
-    </td>
+    </td> -->
 </tr>
 <?php endwhile; ?>
 

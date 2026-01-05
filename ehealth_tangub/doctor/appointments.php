@@ -65,7 +65,7 @@ $appointments = mysqli_query($conn, "
     <td><?= date("h:i A", strtotime($a['appointment_time'])) ?></td>
     <td><?= htmlspecialchars($a['patient_name']) ?></td>
     <td>
-        <a href="consultation.php?appointment_id=<?= $a['appointment_id'] ?>"
+        <a href="consultation.php?id=<?= $a['appointment_id'] ?>"
            class="btn btn-success btn-sm">
            Consult
         </a>

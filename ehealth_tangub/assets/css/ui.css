@@ -22,6 +22,9 @@
   box-sizing: border-box;
   font-family: "Segoe UI", Tahoma, sans-serif;
 }
+a{
+    text-decoration: none;
+}
 
 body {
   background: var(--background);
@@ -48,6 +51,11 @@ body {
 .btn-danger {
   background: var(--danger);
   color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s ease;
 }
 
 /* ================================
@@ -55,6 +63,10 @@ body {
 ================================ */
 .form-group {
   margin-bottom: 15px;
+}
+
+.form_wrapper{
+    text-align: left;
 }
 
 .form-group label {
@@ -345,3 +357,20 @@ table th {
     color: #991b1b;
 }
 
+.link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px; /* space between emoji and text */
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    text-decoration: none;
+    cursor: pointer;
+    background-color: #3ca694;
+    color: #fff;
+    transition: background 0.2s;
+}
+
+.link-btn:hover {
+    background-color: #175a4f;
+}
