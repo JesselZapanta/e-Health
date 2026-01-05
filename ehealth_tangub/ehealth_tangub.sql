@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 05, 2026 at 01:13 PM
+-- Generation Time: Jan 05, 2026 at 06:25 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -45,10 +45,11 @@ CREATE TABLE `appointments` (
 
 INSERT INTO `appointments` (`appointment_id`, `patient_id`, `doctor_id`, `appointment_date`, `appointment_time`, `reason`, `qr_code`, `status`, `created_at`) VALUES
 (1, 1, 4, '2026-01-13', '13:20:00', NULL, NULL, 'Approved', '2026-01-04 16:16:03'),
-(2, 1, 4, '2026-01-05', '10:09:00', NULL, NULL, 'Approved', '2026-01-05 02:09:08'),
+(2, 1, 4, '2026-01-05', '10:09:00', NULL, NULL, 'Completed', '2026-01-05 02:09:08'),
 (3, 1, 4, '2026-01-05', '14:30:00', NULL, NULL, 'Approved', '2026-01-05 04:15:22'),
 (4, 1, 4, '2026-01-05', '14:00:00', NULL, NULL, 'Approved', '2026-01-05 05:46:37'),
-(5, 1, 9, '2026-01-10', '10:00:00', NULL, NULL, 'Approved', '2026-01-05 05:55:51');
+(5, 1, 9, '2026-01-10', '10:00:00', NULL, NULL, 'Approved', '2026-01-05 05:55:51'),
+(27, 4, 4, '2026-01-05', '08:30:00', NULL, 'A4ED942CZA3W', 'Completed', '2026-01-05 16:09:08');
 
 -- --------------------------------------------------------
 
@@ -68,6 +69,13 @@ CREATE TABLE `consultations` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `consultations`
+--
+
+INSERT INTO `consultations` (`consultation_id`, `appointment_id`, `doctor_id`, `patient_id`, `symptoms`, `diagnosis`, `prescription`, `notes`, `created_at`) VALUES
+(1, 2, 0, 0, 'test', ' test', 'test', 'test', '2026-01-05 17:22:51');
+
 -- --------------------------------------------------------
 
 --
@@ -80,9 +88,22 @@ CREATE TABLE `doctor_availability` (
   `available_date` date NOT NULL,
   `start_time` time NOT NULL,
   `end_time` time NOT NULL,
+  `slots` int(11) NOT NULL,
   `status` enum('available','booked','blocked','expired') NOT NULL DEFAULT 'available',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `doctor_availability`
+--
+
+INSERT INTO `doctor_availability` (`availability_id`, `doctor_id`, `available_date`, `start_time`, `end_time`, `slots`, `status`, `created_at`) VALUES
+(1, 4, '2026-01-05', '20:59:00', '22:59:00', 9, 'available', '2026-01-05 12:59:25'),
+(2, 4, '2026-01-07', '08:59:00', '13:59:00', 10, 'available', '2026-01-05 12:59:57'),
+(3, 4, '2026-01-05', '08:30:00', '12:00:00', 0, 'booked', '2026-01-05 13:38:53'),
+(4, 4, '2026-01-06', '12:51:00', '18:51:00', 10, 'available', '2026-01-05 13:51:22'),
+(5, 4, '2026-01-06', '10:00:00', '12:00:00', 10, 'available', '2026-01-05 14:04:36'),
+(7, 4, '2026-01-05', '06:08:00', '07:08:00', 2, 'available', '2026-01-05 16:08:50');
 
 -- --------------------------------------------------------
 
@@ -104,9 +125,11 @@ CREATE TABLE `inventory` (
 --
 
 INSERT INTO `inventory` (`inventory_id`, `item_name`, `description`, `quantity`, `minimum_stock`, `created_at`) VALUES
-(1, 'Paracetamol', 'for headache', 100, 20, '2026-01-03 15:51:17'),
+(1, 'Paracetamol', 'for headache', 0, 20, '2026-01-03 15:51:17'),
 (2, 'Mefenamic', 'for pain reliever', 50, 25, '2026-01-03 15:51:49'),
-(3, 'Dicycloverin', 'for stomacheache', 50, 20, '2026-01-05 05:44:43');
+(3, 'Dicycloverin', 'for stomacheache', 15, 20, '2026-01-05 05:44:43'),
+(4, 'test', 'test', 1, 1, '2026-01-05 15:55:12'),
+(5, 'test 2', 'test', 3, 1, '2026-01-05 16:05:38');
 
 -- --------------------------------------------------------
 
@@ -122,6 +145,23 @@ CREATE TABLE `inventory_logs` (
   `quantity` int(11) NOT NULL,
   `log_date` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `inventory_logs`
+--
+
+INSERT INTO `inventory_logs` (`log_id`, `inventory_id`, `consultation_id`, `action`, `quantity`, `log_date`) VALUES
+(8, 3, NULL, 'OUT', 2, '2026-01-05 16:18:59'),
+(9, 3, NULL, 'IN', 1, '2026-01-05 16:22:19'),
+(10, 3, NULL, 'OUT', 2, '2026-01-05 16:22:25'),
+(11, 3, NULL, 'OUT', 2, '2026-01-05 16:22:29'),
+(12, 3, NULL, 'OUT', 2, '2026-01-05 16:22:32'),
+(13, 3, NULL, 'OUT', 2, '2026-01-05 16:22:35'),
+(14, 3, NULL, 'OUT', 2, '2026-01-05 16:22:39'),
+(15, 3, NULL, 'OUT', 4, '2026-01-05 16:43:55'),
+(16, 3, NULL, 'OUT', 10, '2026-01-05 16:44:07'),
+(17, 1, NULL, 'OUT', 100, '2026-01-05 16:44:25'),
+(18, 3, NULL, 'OUT', 10, '2026-01-05 16:44:36');
 
 -- --------------------------------------------------------
 
@@ -151,7 +191,8 @@ CREATE TABLE `patients` (
 INSERT INTO `patients` (`patient_id`, `user_id`, `date_of_birth`, `gender`, `address`, `contact_number`, `is_pregnant`, `birth_date`, `blood_type`, `medical_history`, `height`, `weight`) VALUES
 (1, 2, NULL, NULL, NULL, NULL, 0, NULL, 'O', NULL, '156', '65'),
 (2, 6, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL),
-(3, 7, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
+(3, 7, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL),
+(4, 11, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -220,7 +261,9 @@ INSERT INTO `users` (`user_id`, `full_name`, `email`, `password`, `role`, `statu
 (6, 'Shane R Rafol', 'shane@ehealth.com', '$2y$10$TBql.xOOHDqtgC.BVGpt3eEkgHrvubvs0qB.5tlrN2U8vWRo1c54q', 'patient', 'active', '2026-01-04 18:21:40'),
 (7, 'Pemar C Sabijon', 'pemar@gmail.com', '$2y$10$kUPl9UPMQkkCa53dOxQgBeEe5VTn9rB9u6p6oBY6cxJqemgsCmqHm', 'patient', 'active', '2026-01-05 01:51:08'),
 (8, 'Giesel Q Ocariza', 'giesel@ehealth.com', '$2y$10$642rvWWVxSNMbuQ903AVa.LLcnVFGG46OrCqw42EQbdlqoWWq2CC.', 'staff', 'active', '2026-01-05 05:42:30'),
-(9, 'Criz A Entera', 'criz@gmail.com', '$2y$10$FGCS8RlYNqn/wnSrdk6JbOAVkLnHmBNrjY3oY6kcJ0vvijjOLxQzq', 'doctor', 'active', '2026-01-05 05:55:04');
+(9, 'Criz A Entera', 'criz@gmail.com', '$2y$10$FGCS8RlYNqn/wnSrdk6JbOAVkLnHmBNrjY3oY6kcJ0vvijjOLxQzq', 'doctor', 'active', '2026-01-05 05:55:04'),
+(11, 'patient P patient', 'patient@ehealth.com', '$2y$10$2LjPR8uDhx0N13J/OSPIsOjq8/13jeQIkWg7kusLFERuvASkm.ePe', 'patient', 'active', '2026-01-05 12:48:20'),
+(12, 'staff S Staff', 'staff@gmail.com', '$2y$10$ycc8LlSGM5Rqjvl9LuKZq.9dTo8.axD/8Re./TNWsFcWsNcwfg63S', 'staff', 'active', '2026-01-05 12:50:52');
 
 --
 -- Indexes for dumped tables
@@ -298,37 +341,37 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `appointments`
 --
 ALTER TABLE `appointments`
-  MODIFY `appointment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `appointment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT for table `consultations`
 --
 ALTER TABLE `consultations`
-  MODIFY `consultation_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `consultation_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `doctor_availability`
 --
 ALTER TABLE `doctor_availability`
-  MODIFY `availability_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `availability_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `inventory`
 --
 ALTER TABLE `inventory`
-  MODIFY `inventory_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `inventory_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `inventory_logs`
 --
 ALTER TABLE `inventory_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `patients`
 --
 ALTER TABLE `patients`
-  MODIFY `patient_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `patient_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `prenatal_records`
@@ -346,7 +389,7 @@ ALTER TABLE `reports_archive`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- Constraints for dumped tables
