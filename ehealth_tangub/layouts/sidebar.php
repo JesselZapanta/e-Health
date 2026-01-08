@@ -11,6 +11,21 @@ if (!isset($_SESSION['role'])) {
 
 $role = $_SESSION['role'];
 $current = basename($_SERVER['PHP_SELF']);
+
+// Include DB connection
+require_once "../config/database.php";
+
+// Fetch patient info if role is patient
+$patientInfo = null;
+if ($role === 'patient' && isset($_SESSION['user_id'])) {
+    $user_id = $_SESSION['user_id'];
+    $sql = "SELECT gender, is_pregnant FROM patients WHERE user_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $patientInfo = $result->fetch_assoc();
+}
 ?>
 
 <aside class="sidebar">
@@ -21,7 +36,7 @@ $current = basename($_SERVER['PHP_SELF']);
 
     <nav class="menu">
 
-        <!-- ================= ADMIN MENU (REVISED ONLY) ================= -->
+        <!-- ================= ADMIN MENU ================= -->
         <?php if ($role === 'admin'): ?>
 
             <a href="/ehealth_tangub/admin/dashboard.php" class="<?= $current=='dashboard.php'?'active':'' ?>">
@@ -54,7 +69,7 @@ $current = basename($_SERVER['PHP_SELF']);
 
         <?php endif; ?>
 
-        <!-- ================= DOCTOR MENU (UNCHANGED) ================= -->
+        <!-- ================= DOCTOR MENU ================= -->
         <?php if ($role === 'doctor'): ?>
 
             <a href="dashboard.php" class="<?= $current=='dashboard.php'?'active':'' ?>">
@@ -83,7 +98,7 @@ $current = basename($_SERVER['PHP_SELF']);
 
         <?php endif; ?>
 
-        <!-- ================= HEALTH STAFF MENU (UNCHANGED) ================= -->
+        <!-- ================= HEALTH STAFF MENU ================= -->
         <?php if ($role === 'staff'): ?>
 
             <a href="dashboard.php" class="<?= $current=='dashboard.php'?'active':'' ?>">
@@ -110,16 +125,13 @@ $current = basename($_SERVER['PHP_SELF']);
                 👥 <span>Patient Records</span>
             </a>
 
-            <!-- ✅ NEW: Staff Consultation Records -->
-    <a href="consultations.php" class="<?= $current=='consultations.php'?'active':'' ?>">
-        📋 <span>Consultation Records</span>
-    </a>
+            <a href="consultations.php" class="<?= $current=='consultations.php'?'active':'' ?>">
+                📋 <span>Consultation Records</span>
+            </a>
 
-    <!-- ✅ NEW: Staff Prenatal Records -->
-    <a href="prenatal.php" class="<?= $current=='prenatal.php'?'active':'' ?>">
-        🤰 <span>Prenatal Records</span>
-    </a>
-
+            <a href="prenatal.php" class="<?= $current=='prenatal.php'?'active':'' ?>">
+                🤰 <span>Prenatal Records</span>
+            </a>
 
             <a href="reports.php">
                 📄 <span>Reports</span>
@@ -127,7 +139,7 @@ $current = basename($_SERVER['PHP_SELF']);
 
         <?php endif; ?>
 
-        <!-- ================= PATIENT MENU (UNCHANGED) ================= -->
+        <!-- ================= PATIENT MENU ================= -->
         <?php if ($role === 'patient'): ?>
 
             <a href="dashboard.php" class="<?= $current=='dashboard.php'?'active':'' ?>">
@@ -142,9 +154,14 @@ $current = basename($_SERVER['PHP_SELF']);
                 🩺 <span>Consultation Records</span>
             </a>
 
-            <a href="prenatal.php">
-                🤰 <span>Prenatal Tracker</span>
-            </a>
+            <?php
+            // Only show Prenatal Tracker if female and pregnant
+            if ($patientInfo && $patientInfo['gender'] === 'female' && $patientInfo['is_pregnant'] == 1):
+            ?>
+                <a href="prenatal.php">
+                    🤰 <span>Prenatal Tracker</span>
+                </a>
+            <?php endif; ?>
 
             <a href="profile.php">
                 ⚙️ <span>Profile / Settings</span>

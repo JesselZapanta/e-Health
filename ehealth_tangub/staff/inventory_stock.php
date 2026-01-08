@@ -1,7 +1,6 @@
 <?php
 require_once "../config/database.php";
 
-
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'staff') {
     header("Location: ../auth/login.php");
     exit();
@@ -24,16 +23,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'];
         $qty = (int)$_POST['quantity'];
 
-        if ($action === 'IN') {
-            mysqli_query($conn, "UPDATE inventory SET quantity = quantity + $qty WHERE inventory_id = $id");
-        } else {
+        $name = $address = null;
+        if ($action === 'OUT') {
+            $name = isset($_POST['name']) ? mysqli_real_escape_string($conn, $_POST['name']) : '';
+            $address = isset($_POST['address']) ? mysqli_real_escape_string($conn, $_POST['address']) : '';
             mysqli_query($conn, "UPDATE inventory SET quantity = quantity - $qty WHERE inventory_id = $id");
+        } else {
+            mysqli_query($conn, "UPDATE inventory SET quantity = quantity + $qty WHERE inventory_id = $id");
         }
 
+        // Insert into logs
         mysqli_query(
             $conn,
-            "INSERT INTO inventory_logs (inventory_id, action, quantity, log_date)
-             VALUES ($id, '$action', $qty, NOW())"
+            "INSERT INTO inventory_logs (inventory_id, action, quantity, log_date, name, address)
+             VALUES ($id, '$action', $qty, NOW(), " .
+             ($name !== null ? "'$name'" : "NULL") . ", " .
+             ($address !== null ? "'$address'" : "NULL") . ")"
         );
 
         header("Location: inventory.php?view=$id");
@@ -49,7 +54,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="/ehealth_tangub/assets/css/ui.css">
     <style>
         .card { max-width: 400px; margin: 50px auto; padding:20px; }
+        .form-group { margin-bottom: 15px; }
     </style>
+    <script>
+        function toggleExtraFields() {
+            const action = document.querySelector('select[name="action"]').value;
+            const extraFields = document.getElementById('extraFields');
+            if (action === 'OUT') {
+                extraFields.style.display = 'block';
+            } else {
+                extraFields.style.display = 'none';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            toggleExtraFields();
+            document.querySelector('select[name="action"]').addEventListener('change', toggleExtraFields);
+        });
+    </script>
 </head>
 <body>
 <div class="app-container">
@@ -57,11 +78,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main class="main-content">
 <?php require "../layouts/topbar.php"; ?>
 
-
-
 <div class="card">
 <form method="POST">
     <h3>Stock In / Out — <?= htmlspecialchars($item['item_name']) ?></h3>
+    
     <div class="form-group">
         <label>Action</label>
         <select name="action">
@@ -75,10 +95,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="number" name="quantity" required min="1">
     </div>
 
+    <!-- Extra fields for Stock OUT -->
+    <div id="extraFields" style="display:none;">
+        <div class="form-group">
+            <label>Name</label>
+            <input type="text" name="name">
+        </div>
+        <div class="form-group">
+            <label>Address</label>
+            <input type="text" name="address">
+        </div>
+    </div>
+
     <a href="inventory.php" class="btn-danger" style="margin-top:10px; display:inline-block;">
         Cancel
     </a>
-
     <button class="btn-primary" style="margin-top:10px;">Submit</button>
 </form>
 </div>

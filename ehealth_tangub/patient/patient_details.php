@@ -4,7 +4,7 @@ require_once "../config/database.php";
 /* ================================
    ACCESS CONTROL
 ================================ */
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'staff') {
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'patient') {
     exit("Unauthorized");
 }
 

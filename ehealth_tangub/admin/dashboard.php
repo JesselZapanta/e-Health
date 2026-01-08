@@ -9,9 +9,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 /* ================================
    DASHBOARD METRICS
 ================================ */
-$totalPatients = mysqli_fetch_assoc(
-    mysqli_query($conn, "SELECT COUNT(*) total FROM patients")
-)['total'];
 
 $totalDoctors = mysqli_fetch_assoc(
     mysqli_query($conn, "SELECT COUNT(*) total FROM users WHERE role='doctor'")
@@ -26,11 +23,18 @@ $totalUsers = mysqli_fetch_assoc(
 )['total'];
 
 $todayAppointments = mysqli_fetch_assoc(
-    mysqli_query($conn, "SELECT COUNT(*) total FROM appointments WHERE appointment_date = CURDATE()")
+    mysqli_query(
+        $conn,
+        "SELECT COUNT(*) AS total 
+         FROM appointments 
+         WHERE appointment_date = CURDATE() 
+         AND status = 'Approved'"
+    )
 )['total'];
 
+
 $prenatalCases = mysqli_fetch_assoc(
-    mysqli_query($conn, "SELECT COUNT(*) total FROM patients WHERE is_pregnant = 1")
+    mysqli_query($conn, "SELECT COUNT(*) total FROM appointments WHERE type = 'prenatal' AND status = 'Completed'")
 )['total'];
 
 $lowStock = mysqli_fetch_assoc(
@@ -73,7 +77,7 @@ $lowStock = mysqli_fetch_assoc(
         /* DASHBOARD CARDS */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
         }
 
@@ -144,18 +148,11 @@ $lowStock = mysqli_fetch_assoc(
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-icon">👩‍🍼</div>
-                <div>
-                    <h4>Total Patients</h4>
-                    <p><?= $totalPatients ?></p>
-                </div>
-            </div>
 
             <div class="card">
                 <div class="card-icon">📅</div>
                 <div>
-                    <h4>Today's Appointments</h4>
+                    <h4>Today's Approved Appointments</h4>
                     <p><?= $todayAppointments ?></p>
                 </div>
             </div>
@@ -163,7 +160,7 @@ $lowStock = mysqli_fetch_assoc(
             <div class="card">
                 <div class="card-icon">🤰</div>
                 <div>
-                    <h4>Prenatal Cases</h4>
+                    <h4>Total Completed Prenatal</h4>
                     <p><?= $prenatalCases ?></p>
                 </div>
             </div>

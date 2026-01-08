@@ -136,6 +136,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         input.input-error:focus {
             border-color: #dc2626;
         }
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -233,6 +239,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <button class="btn-primary" style="width:100%">Register</button>
     </form>
+    <a href="login.php">back to login</a>
 </div>
 
 <!-- MODAL -->

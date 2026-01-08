@@ -19,6 +19,7 @@ $appointments = mysqli_query($conn, "
     JOIN patients p ON a.patient_id = p.patient_id
     JOIN users u ON p.user_id = u.user_id
     JOIN users d ON a.doctor_id = d.user_id
+    WHERE a.status IN ('Approved')
     ORDER BY a.appointment_id DESC
 ");
 ?>

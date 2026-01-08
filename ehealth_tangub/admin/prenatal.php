@@ -1,219 +1,226 @@
 <?php
 require_once "../config/database.php";
 
+/* ================================
+   ACCESS CONTROL
+================================ */
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../auth/login.php");
     exit();
 }
 
-/* ================= LIST QUERY ================= */
-$prenatals = mysqli_query($conn, "
-    SELECT 
-        pr.prenatal_id,
-        u.full_name AS patient_name,
-        pr.visit_date
-    FROM prenatal_records pr
-    JOIN patients p ON pr.patient_id = p.patient_id
-    JOIN users u ON p.user_id = u.user_id
-    ORDER BY pr.visit_date DESC
-");
+/* ================================
+   FETCH PATIENT LIST
+================================ */
+$patients = mysqli_query(
+    $conn,
+    "SELECT 
+        p.patient_id,
+        u.full_name,
+        -- Latest prenatal appointment date
+        (SELECT a.appointment_date 
+         FROM appointments a 
+         WHERE a.patient_id = p.patient_id
+           AND a.type = 'prenatal'
+         ORDER BY a.appointment_date DESC
+         LIMIT 1) AS appointment_date,
+        -- Latest prenatal appointment type
+        (SELECT a.type 
+         FROM appointments a 
+         WHERE a.patient_id = p.patient_id
+           AND a.type = 'prenatal'
+         ORDER BY a.appointment_date DESC
+         LIMIT 1) AS appointment_type
+    FROM patients p
+    JOIN users u 
+        ON p.user_id = u.user_id
+    WHERE EXISTS (
+        SELECT 1
+        FROM appointments a
+        WHERE a.patient_id = p.patient_id
+          AND a.type = 'prenatal'
+    )
+    ORDER BY u.full_name ASC"
+);
 
-/* ================= VIEW LOGIC ================= */
-$viewId   = $_GET['view'] ?? null;
-$fullView = isset($_GET['full']) && $viewId;
 
-$record = null;
-if ($viewId) {
-    $stmt = $conn->prepare("
-        SELECT 
-            u.full_name AS patient_name,
-            pr.visit_date,
-            pr.weight,
-            pr.blood_pressure,
-            pr.notes
-        FROM prenatal_records pr
-        JOIN patients p ON pr.patient_id = p.patient_id
-        JOIN users u ON p.user_id = u.user_id
-        WHERE pr.prenatal_id = ?
-    ");
-    $stmt->bind_param("i", $viewId);
-    $stmt->execute();
-    $record = $stmt->get_result()->fetch_assoc();
-}
 ?>
+
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Prenatal Records | eHEALTH</title>
+    <title>Patient Records | eHEALTH</title>
     <link rel="stylesheet" href="../assets/css/ui.css">
+
     <style>
-        .page-header {
-            margin-bottom:20px;
+        .layout { display: flex; }
+        .main { flex: 1; padding: 25px; }
+
+        /* SPLIT VIEW */
+        .split-view {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 20px;
         }
 
         .card {
-            background:#fff;
-            padding:20px;
-            border-radius:14px;
-            box-shadow:var(--shadow);
-        }
-
-        .split {
-            display:grid;
-            grid-template-columns: <?= $viewId && !$fullView ? '1.2fr 1fr' : '1fr' ?>;
-            gap:20px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 15px;
         }
 
         table {
-            width:100%;
-            border-collapse:collapse;
+            width: 100%;
+            border-collapse: collapse;
         }
 
         th, td {
-            padding:14px;
-            border-bottom:1px solid #eee;
-            text-align:left;
-            font-size:14px;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            text-align: left;
         }
 
         th {
-            background:#f8fafc;
+            background: #f8fafc;
         }
 
-        .detail-header {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            margin-bottom:15px;
+        .status.active { color: #16a34a; font-weight: bold; }
+        .status.inactive { color: #dc2626; font-weight: bold; }
+
+        .btn-view {
+            padding: 6px 10px;
+            background: var(--primary);
+            color: #fff;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            border: none;
         }
 
-        .detail-grid {
-            display:grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap:15px;
-            font-size:14px;
+        .btn-view:hover {
+            background: var(--primary-dark);
         }
 
-        .detail-box {
-            background:#f8fafc;
-            padding:12px;
-            border-radius:8px;
-            line-height:1.5;
+        /* DETAILS PANEL */
+        .details-empty {
+            text-align: center;
+            color: #666;
+            padding-top: 80px;
         }
 
-        .detail-box.full {
-            grid-column:1 / -1;
+        .detail-item {
+            margin-bottom: 10px;
         }
 
-        .actions {
-            display:flex;
-            gap:10px;
+        .detail-item span {
+            font-weight: bold;
+            display: inline-block;
+            width: 140px;
         }
     </style>
 </head>
 <body>
 
 <div class="layout">
-<?php require_once "../layouts/sidebar.php"; ?>
+    <?php require_once "../layouts/sidebar.php"; ?>
 
-<main class="main">
-<?php require_once "../layouts/topbar.php"; ?>
+    <main class="main">
+        <?php require_once "../layouts/topbar.php"; ?>
 
-<div class="page-header">
-    <h2>Prenatal Records</h2>
-    <p style="color:#64748b;font-size:14px;">
-        Prenatal visit history (view-only)
-    </p>
+        <h3 style="margin-bottom:15px;">Prenatal Records</h3>
+
+        <div class="split-view">
+
+            <!-- LEFT: PATIENT LIST -->
+            <div class="card">
+
+                <div class="form-group" style="flex: 1; margin-right: 10px;">
+                    <label>Search Patient</label>
+                    <input type="text" id="searchInput" placeholder="Type something..." />
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php while ($p = mysqli_fetch_assoc($patients)): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($p['full_name']) ?></td>
+                            <td><?= htmlspecialchars($p['appointment_date']) ?></td>
+                            <td class="status <?= $p['appointment_type'] ?>"><?= ucfirst($p['appointment_type']) ?></td>
+                            <td>
+                                <button class="btn-view" onclick="loadPatient(<?= $p['patient_id'] ?>)">
+                                    View
+                                </button>
+                            </td>
+                        </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- RIGHT: PATIENT DETAILS -->
+            <div class="card" id="detailsPanel">
+                <div class="details-empty">
+                    Select a patient to view details
+                </div>
+            </div>
+
+        </div>
+    </main>
 </div>
 
-<div class="split">
+<script>
+function loadPatient(id) {
+    fetch("patient_details.php?id=" + id)
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById("detailsPanel").innerHTML = html;
+        });
+}
 
-<!-- ================= LEFT: TABLE ================= -->
-<?php if (!$fullView): ?>
-<div class="card">
-<table>
-<thead>
-<tr>
-    <th>Patient</th>
-    <th>Visit Date</th>
-    <th style="width:120px;">Action</th>
-</tr>
-</thead>
-<tbody>
-<?php if (mysqli_num_rows($prenatals) === 0): ?>
-<tr>
-    <td colspan="3" style="text-align:center;color:#64748b;">
-        No prenatal records found.
-    </td>
-</tr>
-<?php endif; ?>
+// =====================
+// PATIENT SEARCH
+// =====================
+const searchInput = document.getElementById('searchInput');
+const table = document.querySelector('.split-view .card table');
 
-<?php while ($p = mysqli_fetch_assoc($prenatals)): ?>
-<tr>
-    <td><?= htmlspecialchars($p['patient_name']) ?></td>
-    <td><?= date("M d, Y", strtotime($p['visit_date'])) ?></td>
-    <td>
-        <a href="?view=<?= $p['prenatal_id'] ?>" class="btn btn-success btn-sm">
-            View
-        </a>
-    </td>
-</tr>
-<?php endwhile; ?>
-</tbody>
-</table>
-</div>
-<?php endif; ?>
+function filterTable() {
+    const searchText = searchInput.value.toLowerCase().trim();
+    let anyVisible = false;
 
-<!-- ================= RIGHT: DETAILS ================= -->
-<?php if ($record): ?>
-<div class="card">
-<div class="detail-header">
-    <strong>Prenatal Visit Details</strong>
-    <div class="actions">
-        <?php if (!$fullView): ?>
-            <a href="?view=<?= $viewId ?>&full=1" class="btn btn-primary btn-sm">
-                ⛶ Full View
-            </a>
-        <?php endif; ?>
-        <a href="prenatal.php" class="btn btn-danger btn-sm">
-            ← Back
-        </a>
-    </div>
-</div>
+    for (let row of table.tBodies[0].rows) {
+        const patientName = row.cells[0].textContent.toLowerCase().trim();
 
-<div class="detail-grid">
-    <div class="detail-box">
-        <strong>Patient</strong><br>
-        <?= htmlspecialchars($record['patient_name']) ?>
-    </div>
+        if (patientName.includes(searchText)) {
+            row.style.display = '';
+            anyVisible = true;
+        } else {
+            row.style.display = 'none';
+        }
+    }
 
-    <div class="detail-box">
-        <strong>Visit Date</strong><br>
-        <?= date("M d, Y", strtotime($record['visit_date'])) ?>
-    </div>
+    // Handle "No Data Found" row
+    let noDataRow = table.tBodies[0].querySelector('.no-data-row');
+    if (!noDataRow) {
+        noDataRow = document.createElement('tr');
+        noDataRow.classList.add('no-data-row');
+        noDataRow.innerHTML = '<td colspan="4" class="no-data" style="text-align:center; padding:10px;">No data found.</td>';
+        table.tBodies[0].appendChild(noDataRow);
+    }
+    noDataRow.style.display = anyVisible ? 'none' : '';
+}
 
-    <div class="detail-box">
-        <strong>Weight</strong><br>
-        <?= $record['weight'] ?: '—' ?> kg
-    </div>
-
-    <div class="detail-box">
-        <strong>Blood Pressure</strong><br>
-        <?= $record['blood_pressure'] ?: '—' ?>
-    </div>
-
-    <div class="detail-box full">
-        <strong>Notes</strong><br>
-        <?= nl2br($record['notes'] ?: '—') ?>
-    </div>
-</div>
-</div>
-<?php endif; ?>
-
-</div>
-
-</main>
-</div>
+searchInput.addEventListener('input', filterTable);
+</script>
 
 </body>
 </html>

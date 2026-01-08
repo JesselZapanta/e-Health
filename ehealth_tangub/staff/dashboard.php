@@ -51,8 +51,12 @@ $todayList = mysqli_query(
 ================================ */
 $lowStockItems = mysqli_query(
     $conn,
-    "SELECT * FROM inventory WHERE quantity <= minimum_stock ORDER BY inventory_id ASC"
+    "SELECT * FROM inventory 
+     WHERE quantity <= (maximum_stock * 0.20)
+     ORDER BY inventory_id ASC"
 );
+
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -221,7 +225,7 @@ $lowStockItems = mysqli_query(
                         <td><?= htmlspecialchars($item['item_name']) ?></td>
                         <td><?= htmlspecialchars($item['description']) ?></td>
                         <td><?= $item['quantity'] ?></td>
-                        <td><?= $item['minimum_stock'] ?></td>
+                        <td><?= $item['maximum_stock'] ?></td>
                     </tr>
                 <?php endwhile; ?>
             <?php else: ?>

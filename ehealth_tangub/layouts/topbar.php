@@ -18,12 +18,12 @@ $full_name = $_SESSION['full_name'];
 
         <!-- NOTIFICATION BELL -->
         <div class="notif">
-            🔔
-            <div class="notif-dropdown">
+            👤
+            <!-- <div class="notif-dropdown">
                 <p><strong>Notifications</strong></p>
                 <hr>
                 <p>No new notifications</p>
-            </div>
+            </div> -->
         </div>
 
         <!-- USER NAME -->
@@ -56,7 +56,7 @@ $full_name = $_SESSION['full_name'];
 /* NOTIFICATIONS */
 .notif {
     position: relative;
-    cursor: pointer;
+    /* cursor: pointer; */
     font-size: 18px;
 }
 

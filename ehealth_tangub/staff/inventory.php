@@ -8,24 +8,25 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'staff') {
 }
 
 // Handle Add New Item
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_name'], $_POST['quantity'], $_POST['minimum_stock'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_name'], $_POST['quantity'], $_POST['maximum_stock'])) {
     $name = mysqli_real_escape_string($conn, $_POST['item_name']);
     $desc = mysqli_real_escape_string($conn, $_POST['description'] ?? '');
     $qty = (int)$_POST['quantity'];
-    $min = (int)$_POST['minimum_stock'];
+    $max = (int)$_POST['maximum_stock'];
 
-    mysqli_query(
-        $conn,
-        "INSERT INTO inventory (item_name, description, quantity, minimum_stock)
-         VALUES ('$name', '$desc', $qty, $min)"
-    );
+    $query = "INSERT INTO inventory (item_name, description, quantity, maximum_stock)
+              VALUES ('$name', '$desc', $qty, $max)";
+
+    if (!mysqli_query($conn, $query)) {
+        die("Database Error: " . mysqli_error($conn));
+    }
 
     header("Location: inventory.php");
     exit();
 }
 
 // Get inventory items
-$items = mysqli_query($conn, "SELECT * FROM inventory ORDER BY item_name ASC");
+$items = mysqli_query($conn, "SELECT * FROM inventory ORDER BY inventory_id DESC");
 
 // Get selected item and logs
 $selected = isset($_GET['view']) ? (int)$_GET['view'] : null;
@@ -39,13 +40,11 @@ if ($selected) {
 
     $logResult = mysqli_query(
         $conn,
-        "SELECT * FROM inventory_logs WHERE inventory_id = $selected ORDER BY log_date DESC"
-    );
+        "SELECT * FROM inventory_logs WHERE inventory_id = $selected ORDER BY log_date DESC")
+    ;
 
-    if ($logResult) {
-        while ($row = mysqli_fetch_assoc($logResult)) {
-            $logs[] = $row;
-        }
+    while ($row = mysqli_fetch_assoc($logResult)) {
+        $logs[] = $row;
     }
 }
 ?>
@@ -55,14 +54,64 @@ if ($selected) {
 <head>
     <title>Inventory Management | eHEALTH</title>
     <link rel="stylesheet" href="/ehealth_tangub/assets/css/ui.css">
+
     <style>
-        .split-layout { display: flex; gap: 20px; }
-        .has-detail .card { flex: 1; }
-        .detail-panel { flex: 1; max-width: 400px; }
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); justify-content:center; align-items:center; }
-        .modal-content { background:#fff; padding:20px; border-radius:8px; width:400px; }
-        .logs { max-height: 200px; overflow-y: auto; }
-        .log-item { border-bottom: 1px solid #eee; padding:5px 0; }
+        .split-layout {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        /* LEFT: Inventory table (fixed width) */
+        .inventory-panel {
+            flex: 0 0 65%;
+        }
+
+        /* RIGHT: Details panel (fixed width) */
+        .detail-panel {
+            flex: 0 0 35%;
+            max-width: 35%;
+        }
+
+        .modal {
+            display:none;
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,.5);
+            justify-content:center;
+            align-items:center;
+        }
+
+        .modal-content {
+            background:#fff;
+            padding:20px;
+            border-radius:8px;
+            width:400px;
+        }
+
+        .logs {
+            max-height:300px;
+            overflow-y:auto;
+        }
+
+        .log-item {
+            background:#fff;
+            padding:10px;
+            border-radius:6px;
+            margin-bottom:10px;
+            box-shadow:0 1px 3px rgba(0,0,0,.05);
+        }
+
+        .log-item strong {
+            display:block;
+            font-size:14px;
+            margin-bottom:3px;
+        }
+
+        .log-item span {
+            font-size:12px;
+            color:#555;
+        }
     </style>
 </head>
 <body>
@@ -77,36 +126,42 @@ if ($selected) {
     <button class="btn-primary" onclick="openModal()">+ Add Item</button>
 </div>
 
-<div class="split-layout <?= $selected ? 'has-detail' : '' ?>">
+<div class="split-layout">
 
 <!-- LEFT: INVENTORY TABLE -->
-<div class="card">
+<div class="card inventory-panel">
+    <div class="form-group">
+        <label>Search Item</label>
+        <input type="text" id="searchInput" placeholder="Type item name..." />
+    </div>
+
 <table class="table">
 <thead>
 <tr>
     <th>Item</th>
     <th>Qty</th>
-    <th>Min</th>
+    <th>Max</th>
     <th>Status</th>
     <th>Action</th>
 </tr>
 </thead>
 <tbody>
 <?php while ($row = mysqli_fetch_assoc($items)):
-    $low = $row['quantity'] <= $row['minimum_stock'];
+    $low = $row['quantity'] < 0.2 * $row['maximum_stock'];
 ?>
 <tr>
     <td><?= htmlspecialchars($row['item_name']) ?></td>
     <td><?= $row['quantity'] ?></td>
-    <td><?= $row['minimum_stock'] ?></td>
+    <td><?= $row['maximum_stock'] ?></td>
     <td>
-        <?= $low ? '<span class="badge badge-danger">Low</span>' : '<span class="badge badge-success">OK</span>' ?>
+        <?= $low
+            ? '<span class="badge badge-danger">Low</span>'
+            : '<span class="badge badge-success">OK</span>' ?>
     </td>
     <td>
-        <a href="inventory_stock.php?id=<?= $row['inventory_id'] ?>" class="link-btn">🏷️Stock</a>
-        <a href="?view=<?= $row['inventory_id'] ?>" class="link-btn">👁️View</a>
+        <a href="inventory_stock.php?id=<?= $row['inventory_id'] ?>" class="link-btn">🏷️ Stock</a>
+        <a href="?view=<?= $row['inventory_id'] ?>" class="link-btn">👁️ View</a>
     </td>
-
 </tr>
 <?php endwhile; ?>
 </tbody>
@@ -121,21 +176,41 @@ if ($selected) {
 
     <hr>
     <h5>Logs</h5>
+
     <div class="logs">
-    <?php if (!empty($logs)): ?>
-        <?php foreach ($logs as $l): ?>
-            <div class="log-item">
-                <strong><?= $l['action'] ?></strong> — <?= $l['quantity'] ?> pcs
-                <span><?= $l['log_date'] ?></span>
-            </div>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <p style="color:#888;">No logs available for this item.</p>
+    <?php if ($logs): foreach ($logs as $l): ?>
+        <div class="log-item">
+            <span style="
+                display:inline-block;
+                padding:3px 8px;
+                border-radius:12px;
+                font-size:12px;
+                font-weight:bold;
+                color:#fff;
+                background:<?= strtoupper($l['action']) === 'OUT' ? '#e74c3c' : '#2ecc71' ?>;">
+                <?= htmlspecialchars($l['action']) ?>
+            </span>
+
+            <span style="display:block;color:#777;font-size:12px;margin:5px 0;">
+                <?= $l['log_date'] ?>
+            </span>
+
+            <strong>Quantity: <?= $l['quantity'] ?> pcs</strong>
+
+            <?php if (strtoupper($l['action']) === 'OUT'): ?>
+                <span>Name: <?= htmlspecialchars($l['name']) ?></span><br>
+                <span>Address: <?= htmlspecialchars($l['address']) ?></span>
+            <?php endif; ?>
+        </div>
+    <?php endforeach; else: ?>
+        <p style="text-align:center;color:#888;margin-top:30px;">
+            No logs available for this item.
+        </p>
     <?php endif; ?>
     </div>
 
 <?php else: ?>
-    <p style="text-align:center; color:#888; margin-top:50px;">
+    <p style="text-align:center;color:#888;margin-top:50px;">
         Select an item from the list to view details and logs.
     </p>
 <?php endif; ?>
@@ -150,8 +225,7 @@ if ($selected) {
 <div class="modal-content">
 <h4>Add Inventory Item</h4>
 <form method="POST">
-    <div class="form_wrapper">
-        <div class="form-group">
+    <div class="form-group">
         <label>Item Name</label>
         <input type="text" name="item_name" required>
     </div>
@@ -167,9 +241,8 @@ if ($selected) {
     </div>
 
     <div class="form-group">
-        <label>Minimum Stock</label>
-        <input type="number" name="minimum_stock" required>
-    </div>
+        <label>Maximum Stock</label>
+        <input type="number" name="maximum_stock" required>
     </div>
 
     <div class="modal-actions" style="margin-top:10px;">
@@ -181,8 +254,41 @@ if ($selected) {
 </div>
 
 <script>
-function openModal() { document.getElementById('addModal').style.display = 'flex'; }
-function closeModal() { document.getElementById('addModal').style.display = 'none'; }
+function openModal(){ document.getElementById('addModal').style.display='flex'; }
+function closeModal(){ document.getElementById('addModal').style.display='none'; }
+
+const searchInput = document.getElementById('searchInput');
+const table = document.querySelector('.inventory-panel table');
+
+function filterTable() {
+    const searchText = searchInput.value.toLowerCase().trim();
+    let anyVisible = false;
+
+    for (let row of table.tBodies[0].rows) {
+        const itemName = row.cells[0].textContent.toLowerCase().trim();
+
+        if (itemName.includes(searchText)) {
+            row.style.display = '';
+            anyVisible = true;
+        } else {
+            row.style.display = 'none';
+        }
+    }
+
+    let noDataRow = table.tBodies[0].querySelector('.no-data-row');
+    if (!noDataRow) {
+        noDataRow = document.createElement('tr');
+        noDataRow.classList.add('no-data-row');
+        noDataRow.innerHTML =
+            '<td colspan="5" style="text-align:center; padding:10px;">No data found.</td>';
+        table.tBodies[0].appendChild(noDataRow);
+    }
+
+    noDataRow.style.display = anyVisible ? 'none' : '';
+}
+
+searchInput.addEventListener('input', filterTable);
+
 </script>
 
 </body>
