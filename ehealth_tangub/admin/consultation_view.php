@@ -1,12 +1,11 @@
 <?php
 require_once "../config/database.php";
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'doctor') {
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../auth/login.php");
     exit();
 }
 
-$doctor_id = (int) $_SESSION['user_id'];
 
 if (!isset($_GET['id'])) {
     header("Location: consultations.php");
@@ -18,6 +17,7 @@ $consultation_id = (int) $_GET['id'];
 /* ================================
    FETCH CONSULTATION
 ================================ */
+//get the doctors name from appointments table and users table
 $consultation = mysqli_fetch_assoc(
     mysqli_query(
         $conn,
@@ -28,15 +28,18 @@ $consultation = mysqli_fetch_assoc(
             a.appointment_time,
             a.type AS appointment_type,
             u.full_name AS patient_name,
+            d.full_name AS doctor_name,
             p.patient_id
          FROM consultations c
          JOIN appointments a ON c.appointment_id = a.appointment_id
          JOIN patients p ON a.patient_id = p.patient_id
          JOIN users u ON p.user_id = u.user_id
+         JOIN users d ON a.doctor_id = d.user_id
          WHERE c.consultation_id = $consultation_id
-           AND a.doctor_id = $doctor_id"
+         LIMIT 1"
     )
 );
+
 
 if (!$consultation) {
     die("Consultation not found.");
@@ -90,12 +93,15 @@ $information = mysqli_fetch_assoc(
 <h2>Consultation Details</h2>
 
 <!-- Patient Info -->
+<!-- Patient Info -->
 <div class="card">
     <p><strong>Patient:</strong> <?= htmlspecialchars($consultation['patient_name']) ?></p>
+    <p><strong>Doctor:</strong> <?= htmlspecialchars($consultation['doctor_name']) ?></p>
     <p><strong>Date:</strong> <?= $consultation['appointment_date'] ?></p>
     <p><strong>Time:</strong> <?= $consultation['appointment_time'] ?></p>
     <p><strong>Appointment Type:</strong> <?= ucfirst($consultation['appointment_type']) ?></p>
 </div>
+
 
 <!-- Medical Information -->
 <?php if ($information): ?>

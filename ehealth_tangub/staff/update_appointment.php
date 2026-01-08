@@ -14,22 +14,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $id = intval($_POST['id']);
 $action = $_POST['action'];
 
-if (!in_array($action, ['approve', 'deny'])) {
+// Only allow approve or cancel
+if (!in_array($action, ['approve', 'cancel'])) {
     header("Location: appointments.php");
     exit();
 }
 
-$newStatus = ($action === 'approve') ? 'approved' : 'denied';
+// Set the new status
+$newStatus = ($action === 'approve') ? 'Approved' : 'Cancelled';
 
-$stmt = mysqli_prepare($conn, "
-    UPDATE appointments 
-    SET status = ?
-    WHERE appointment_id = ?
-");
-
+// Update the database
+$stmt = mysqli_prepare($conn, "UPDATE appointments SET status = ? WHERE appointment_id = ?");
 mysqli_stmt_bind_param($stmt, "si", $newStatus, $id);
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 
+// Redirect back
 header("Location: appointments.php");
 exit();

@@ -60,14 +60,13 @@ $availability = mysqli_query($conn, "
     </div>
 
     <div class="form-group">
-        <label>Start Time</label>
-        <input type="time" name="start_time" required>
+        <label>Time</label>
+        <select name="time" required>
+            <option value="morning">Morning</option>
+            <option value="afternoon">Afternoon</option>
+        </select>
     </div>
 
-    <div class="form-group">
-        <label>End Time</label>
-        <input type="time" name="end_time" required>
-    </div>
     <div class="form-group">
         <label>Slots</label>
         <input type="text" name="slots" required>
@@ -80,44 +79,110 @@ $availability = mysqli_query($conn, "
 </div>
 
 <div class="card">
-<table>
-<thead>
-<tr>
-    <th>Doctor</th>
-    <th>Date</th>
-    <th>Time Range</th>
-    <th>Slots</th>
-    <th>Status</th>
-</tr>
-</thead>
-<tbody>
-<?php if (mysqli_num_rows($availability) === 0): ?>
-<tr>
-    <td colspan="4" style="text-align:center;">No availability records found.</td>
-</tr>
-<?php endif; ?>
+    <!-- Search Input -->
+    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+        <div class="form-group" style="flex: 1; margin-right: 10px;">
+            <label>Search Doctor</label>
+            <input type="text" id="searchInput" placeholder="Type something..." />
+        </div>
 
-<?php while ($a = mysqli_fetch_assoc($availability)): ?>
-<tr>
-    <td><?= htmlspecialchars($a['full_name']) ?></td>
-    <td><?= $a['available_date'] ?></td>
-    <td><?= date("h:i A", strtotime($a['start_time'])) ?> – <?= date("h:i A", strtotime($a['end_time'])) ?></td>
-    <td><?= $a['slots'] ?></td>
-    <td>
-        <?php if ($a['slots'] > 0): ?>
-            <span class="status active">Available</span>
-        <?php else: ?>
-            <span class="status">Booked</span>
-        <?php endif; ?>
-    </td>
-</tr>
-<?php endwhile; ?>
-</tbody>
-</table>
+        <!-- Status Filter -->
+        <div class="form-group">
+            <label>Filter by Status</label>
+            <select id="statusFilter">
+                <option value="all">All</option>
+                <option value="available">Available</option>
+                <option value="booked">Booked</option>
+            </select>
+        </div>
+    </div>
+
+    <table id="availabilityTable">
+        <thead>
+            <tr>
+                <th>Doctor</th>
+                <th>Date</th>
+                <th>Time of the Day</th>
+                <th>Slots</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (mysqli_num_rows($availability) === 0): ?>
+            <tr>
+                <td colspan="5" style="text-align:center;">No availability records found.</td>
+            </tr>
+            <?php endif; ?>
+
+            <?php while ($a = mysqli_fetch_assoc($availability)): ?>
+            <tr>
+                <td><?= htmlspecialchars($a['full_name']) ?></td>
+                <td><?= $a['available_date'] ?></td>
+                <td><?= strtoupper($a['time']) ?></td>
+                <td><?= $a['slots'] ?></td>
+                <td>
+                    <?php if ($a['slots'] > 0): ?>
+                        <span class="status active">Available</span>
+                    <?php else: ?>
+                        <span class="status">Booked</span>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <?php endwhile; ?>
+        </tbody>
+    </table>
 </div>
 
 </main>
 </div>
+<script>
+const searchInput = document.getElementById('searchInput');
+const statusFilter = document.getElementById('statusFilter');
+const table = document.getElementById('availabilityTable').getElementsByTagName('tbody')[0];
+
+function filterTable() {
+    const filterText = searchInput.value.toLowerCase();
+    const statusValue = statusFilter.value;
+    const rows = table.getElementsByTagName('tr');
+
+    let visibleCount = 0;
+
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        if (cells.length === 0) continue;
+
+        const doctorName = cells[0].textContent.toLowerCase();
+        const statusText = cells[4].textContent.toLowerCase().trim();
+
+        const matchesDoctor = doctorName.includes(filterText);
+        const matchesStatus = (statusValue === 'all') || (statusText === statusValue);
+
+        const showRow = matchesDoctor && matchesStatus;
+        row.style.display = showRow ? '' : 'none';
+
+        if (showRow) visibleCount++;
+    }
+
+    // If no visible rows, show a "NO Data found" row
+    let noDataRow = document.getElementById('noDataRow');
+    if (visibleCount === 0) {
+        if (!noDataRow) {
+            noDataRow = document.createElement('tr');
+            noDataRow.id = 'noDataRow';
+            noDataRow.innerHTML = `<td colspan="5" style="text-align:center;">NO Data found</td>`;
+            table.appendChild(noDataRow);
+        }
+    } else {
+        if (noDataRow) {
+            noDataRow.remove();
+        }
+    }
+}
+
+searchInput.addEventListener('input', filterTable);
+statusFilter.addEventListener('change', filterTable);
+</script>
+
 
 </body>
 </html>

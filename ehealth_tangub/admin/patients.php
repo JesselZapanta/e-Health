@@ -92,6 +92,46 @@ if ($viewId) {
             display:flex;
             gap:10px;
         }
+
+        .form-group input {
+            width:100%;
+            padding:8px 10px;
+            border-radius:6px;
+            border:1px solid #ccc;
+            font-size:14px;
+            margin-bottom:10px;
+        }
+
+        .btn {
+            padding:6px 12px;
+            border-radius:6px;
+            text-decoration:none;
+            font-size:14px;
+            cursor:pointer;
+        }
+
+        .btn-sm {
+            padding:4px 8px;
+            font-size:12px;
+        }
+
+        .btn-success {
+            background:#22c55e;
+            color:#fff;
+            border:none;
+        }
+
+        .btn-danger {
+            background:#ef4444;
+            color:#fff;
+            border:none;
+        }
+
+        .btn-primary {
+            background:#3b82f6;
+            color:#fff;
+            border:none;
+        }
     </style>
 </head>
 <body>
@@ -112,34 +152,38 @@ if ($viewId) {
 <!-- ================= LEFT: PATIENT LIST ================= -->
 <?php if (!$fullView): ?>
 <div class="card">
-<table>
-<thead>
-<tr>
-    <th>Name</th>
-    <th>Email</th>
-    <th style="width:120px;">Action</th>
-</tr>
-</thead>
-<tbody>
-<?php if (mysqli_num_rows($patients) === 0): ?>
-<tr>
-    <td colspan="3" style="text-align:center;color:#64748b;">
-        No patients found.
-    </td>
-</tr>
-<?php endif; ?>
+    <div class="form-group">
+        <label>Search patient</label>
+        <input type="text" id="searchInput" placeholder="Type name or email..." />
+    </div>
+    <table id="patientTable">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th style="width:120px;">Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    <?php if (mysqli_num_rows($patients) === 0): ?>
+    <tr>
+        <td colspan="3" style="text-align:center;color:#64748b;">
+            No patients found.
+        </td>
+    </tr>
+    <?php endif; ?>
 
-<?php while ($p = mysqli_fetch_assoc($patients)): ?>
-<tr>
-    <td><?= htmlspecialchars($p['full_name']) ?></td>
-    <td><?= htmlspecialchars($p['email']) ?></td>
-    <td>
-        <a href="?view=<?= $p['user_id'] ?>" class="btn btn-success btn-sm">View</a>
-    </td>
-</tr>
-<?php endwhile; ?>
-</tbody>
-</table>
+    <?php while ($p = mysqli_fetch_assoc($patients)): ?>
+    <tr>
+        <td class="name"><?= htmlspecialchars($p['full_name']) ?></td>
+        <td class="email"><?= htmlspecialchars($p['email']) ?></td>
+        <td>
+            <a href="?view=<?= $p['user_id'] ?>" class="btn btn-success btn-sm">View</a>
+        </td>
+    </tr>
+    <?php endwhile; ?>
+    </tbody>
+    </table>
 </div>
 <?php endif; ?>
 
@@ -172,5 +216,37 @@ if ($viewId) {
 </main>
 </div>
 
+<script>
+const searchInput = document.getElementById('searchInput');
+const tableBody = document.querySelector('#patientTable tbody');
+
+searchInput.addEventListener('input', function() {
+    const filter = searchInput.value.toLowerCase();
+
+    let anyVisible = false;
+
+    for (let row of tableBody.rows) {
+        const name = row.querySelector('.name').textContent.toLowerCase();
+        const email = row.querySelector('.email').textContent.toLowerCase();
+
+        if (name.includes(filter) || email.includes(filter)) {
+            row.style.display = '';
+            anyVisible = true;
+        } else {
+            row.style.display = 'none';
+        }
+    }
+
+    // Handle no data found row
+    let noDataRow = tableBody.querySelector('.no-data-row');
+    if (!noDataRow) {
+        noDataRow = document.createElement('tr');
+        noDataRow.classList.add('no-data-row');
+        noDataRow.innerHTML = '<td colspan="3" style="text-align:center;color:#64748b;">No patients found.</td>';
+        tableBody.appendChild(noDataRow);
+    }
+    noDataRow.style.display = anyVisible ? 'none' : '';
+});
+</script>
 </body>
 </html>

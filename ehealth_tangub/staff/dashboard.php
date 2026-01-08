@@ -10,16 +10,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'staff') {
    DASHBOARD COUNTS
 ================================ */
 
-// Pending appointment requests
-$pendingAppointments = mysqli_fetch_assoc(
-    mysqli_query(
-        $conn,
-        "SELECT COUNT(*) total
-         FROM appointments
-         WHERE status = 'Pending' AND appointment_date = CURDATE()"
-    )
-)['total'];
-
 // Low stock items
 $lowStock = mysqli_fetch_assoc(
     mysqli_query(
@@ -34,9 +24,10 @@ $lowStock = mysqli_fetch_assoc(
 $todayAppointments = mysqli_fetch_assoc(
     mysqli_query(
         $conn,
-        "SELECT COUNT(*) total
+        "SELECT COUNT(*) AS total
          FROM appointments
-         WHERE appointment_date = CURDATE()"
+         WHERE appointment_date = CURDATE()
+           AND status = 'Approved'"
     )
 )['total'];
 
@@ -51,7 +42,16 @@ $todayList = mysqli_query(
      JOIN patients p ON a.patient_id = p.patient_id
      JOIN users u ON p.user_id = u.user_id
      WHERE a.appointment_date = CURDATE()
+        AND a.status = 'Approved'
      ORDER BY a.appointment_time ASC"
+);
+
+/* ================================
+   LOW STOCK ITEMS LIST
+================================ */
+$lowStockItems = mysqli_query(
+    $conn,
+    "SELECT * FROM inventory WHERE quantity <= minimum_stock ORDER BY inventory_id ASC"
 );
 ?>
 <!DOCTYPE html>
@@ -123,6 +123,7 @@ $todayList = mysqli_query(
             box-shadow: var(--shadow);
             border-collapse: collapse;
             overflow: hidden;
+            margin-bottom: 25px;
         }
 
         th, td {
@@ -139,6 +140,9 @@ $todayList = mysqli_query(
         .status.Pending { color: #f59e0b; font-weight: bold; }
         .status.Approved { color: #0284c7; font-weight: bold; }
         .status.Completed { color: #16a34a; font-weight: bold; }
+
+        /* Low stock highlight */
+        .low-stock { color: #dc2626; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -158,17 +162,9 @@ $todayList = mysqli_query(
         <div class="dashboard-grid">
 
             <div class="card">
-                <div class="card-icon">📥</div>
-                <div>
-                    <h4>Pending Appointments</h4>
-                    <p><?= $pendingAppointments ?></p>
-                </div>
-            </div>
-
-            <div class="card">
                 <div class="card-icon">📅</div>
                 <div>
-                    <h4>Today's Appointments</h4>
+                    <h4>Today's Approved Appointments</h4>
                     <p><?= $todayAppointments ?></p>
                 </div>
             </div>
@@ -184,7 +180,7 @@ $todayList = mysqli_query(
         </div>
 
         <!-- TODAY'S APPOINTMENTS TABLE -->
-        <h3 style="margin-bottom:15px;">Today's Appointment List</h3>
+        <h3 style="margin-bottom:15px;">Today's Approved Appointment List</h3>
         <table>
             <tr>
                 <th>Time</th>
@@ -204,7 +200,33 @@ $todayList = mysqli_query(
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="3">No appointments today.</td>
+                    <td colspan="3">No approved appointments today.</td>
+                </tr>
+            <?php endif; ?>
+        </table>
+
+        <!-- LOW STOCK ITEMS TABLE -->
+        <h3 style="margin-bottom:15px; margin-top:15px;">Low Stock Alerts</h3>
+        <table>
+            <tr>
+                <th>Item Name</th>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Minimum Stock</th>
+            </tr>
+
+            <?php if (mysqli_num_rows($lowStockItems) > 0): ?>
+                <?php while ($item = mysqli_fetch_assoc($lowStockItems)): ?>
+                    <tr class="<?= $item['quantity'] == 0 ? 'low-stock' : '' ?>">
+                        <td><?= htmlspecialchars($item['item_name']) ?></td>
+                        <td><?= htmlspecialchars($item['description']) ?></td>
+                        <td><?= $item['quantity'] ?></td>
+                        <td><?= $item['minimum_stock'] ?></td>
+                    </tr>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="5" style="text-align:center;">No low-stock items found.</td>
                 </tr>
             <?php endif; ?>
         </table>

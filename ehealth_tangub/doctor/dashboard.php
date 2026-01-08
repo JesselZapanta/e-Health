@@ -24,34 +24,60 @@ $todayAppointments = mysqli_fetch_assoc(
         "SELECT COUNT(*) total
          FROM appointments
          WHERE doctor_id = $doctor_id
+         AND status = 'Check-in'
          AND appointment_date = CURDATE()"
+    )
+)['total'];
+
+$generalAppointments = mysqli_fetch_assoc(
+    mysqli_query($conn,
+        "SELECT COUNT(*) AS total
+         FROM appointments
+         WHERE doctor_id = $doctor_id
+         AND status = 'Check-in'
+         AND appointment_date = CURDATE()
+         AND type = 'general'"
     )
 )['total'];
 
 $prenatalAppointments = mysqli_fetch_assoc(
     mysqli_query($conn,
-        "SELECT COUNT(*) total
-         FROM appointments a
-         JOIN patients p ON a.patient_id = p.patient_id
-         WHERE a.doctor_id = $doctor_id
-         AND p.is_pregnant = 1"
+        "SELECT COUNT(*) AS total
+         FROM appointments
+         WHERE doctor_id = $doctor_id
+         AND status = 'Check-in'
+         AND appointment_date = CURDATE()
+         AND type = 'prenatal'"
     )
 )['total'];
+
 
 /* ================================
    TODAY'S APPOINTMENTS
 ================================ */
-$todayList = mysqli_query(
-    $conn,
-    "SELECT a.appointment_id, a.appointment_time, a.status,
-            u.full_name AS patient_name
-     FROM appointments a
-     JOIN patients p ON a.patient_id = p.patient_id
-     JOIN users u ON p.user_id = u.user_id
-     WHERE a.doctor_id = $doctor_id
-     AND a.appointment_date = CURDATE()
-     ORDER BY a.appointment_time ASC"
-);
+
+
+$todayList  = mysqli_query($conn, "
+    SELECT 
+        a.appointment_id,
+        a.appointment_date,
+        a.appointment_time,
+        a.type,
+        a.qr_code,
+        u.full_name AS patient_name,
+        i.lmp,
+        i.edc,
+        i.gestational_age
+    FROM appointments a
+    JOIN patients p ON a.patient_id = p.patient_id
+    JOIN users u ON p.user_id = u.user_id
+    LEFT JOIN informations i ON i.appointment_id = a.appointment_id
+    WHERE a.doctor_id = $doctor_id
+      AND a.status = 'Check-in'
+      AND a.appointment_date = CURDATE()
+    ORDER BY i.appointment_id DESC
+");
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -165,13 +191,13 @@ $todayList = mysqli_query(
         <!-- SUMMARY CARDS -->
         <div class="dashboard-grid">
 
-            <div class="card">
+            <!-- <div class="card">
                 <div class="card-icon">📅</div>
                 <div>
                     <h4>Total Appointments</h4>
                     <p><?= $totalAppointments ?></p>
                 </div>
-            </div>
+            </div> -->
 
             <div class="card">
                 <div class="card-icon">🕒</div>
@@ -184,50 +210,54 @@ $todayList = mysqli_query(
             <div class="card">
                 <div class="card-icon">🤰</div>
                 <div>
-                    <h4>Prenatal Appointments</h4>
+                    <h4>Today's General Appointments</h4>
+                    <p><?= $generalAppointments ?></p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">🤱</div>
+                <div>
+                    <h4>Today's Prenatal Appointments</h4>
                     <p><?= $prenatalAppointments ?></p>
                 </div>
             </div>
+
 
         </div>
 
         <!-- TODAY'S APPOINTMENTS TABLE -->
         <h3 style="margin-bottom:15px;">Today's Appointment Queue</h3>
 
-        <table>
-            <tr>
-                <th>Time</th>
-                <th>Patient</th>
-                <th>Status</th>
-                <th>Action</th>
+      <table id="appointmentsTable">
+        <thead>
+        <tr>
+            <th>Patient Name</th>
+            <th>Date</th>
+            <th>Type</th>
+            <th style="width:140px;">Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php if (mysqli_num_rows($todayList ) === 0): ?>
+            <tr class="no-data">
+                <td colspan="4" class="text-center">No checked-in appointments yet.</td>
             </tr>
-
-            <?php if (mysqli_num_rows($todayList) > 0): ?>
-                <?php while ($row = mysqli_fetch_assoc($todayList)): ?>
-                    <tr>
-                        <td><?= $row['appointment_time'] ?></td>
-                        <td><?= htmlspecialchars($row['patient_name']) ?></td>
-                        <td class="status <?= $row['status'] ?>">
-                            <?= $row['status'] ?>
-                        </td>
-                        <td>
-                            <?php if ($row['status'] === 'Approved'): ?>
-                                <a href="consultation.php?id=<?= $row['appointment_id'] ?>"
-                                   class="btn-sm">
-                                   Consult
-                                </a>
-                            <?php else: ?>
-                                —
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <tr>
-                    <td colspan="4">No appointments today.</td>
-                </tr>
-            <?php endif; ?>
-        </table>
+        <?php else: ?>
+            <?php while ($a = mysqli_fetch_assoc($todayList )): ?>
+            <tr>
+                <td><?= htmlspecialchars($a['patient_name']) ?></td>
+                <td><?= $a['appointment_date'] ?></td>
+                <td><?= strtoupper($a['type']) ?></td>
+                <td>
+                    <a href="dashboard-consultation.php?id=<?= $a['appointment_id'] ?>"
+                       class="btn btn-success btn-sm">Consult</a>
+                </td>
+            </tr>
+            <?php endwhile; ?>
+        <?php endif; ?>
+        </tbody>
+    </table>
 
     </main>
 </div>

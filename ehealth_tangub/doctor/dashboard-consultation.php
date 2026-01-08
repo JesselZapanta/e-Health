@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($invalid)) {
          WHERE appointment_id = $appointment_id"
     );
 
-    header("Location: appointments.php?success=1");
+    header("Location: dashboard.php?success=1");
     exit();
 }
 ?>

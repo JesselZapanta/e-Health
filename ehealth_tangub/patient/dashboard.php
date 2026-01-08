@@ -16,6 +16,13 @@ $patient = mysqli_fetch_assoc(
 );
 $patient_id = $patient['patient_id'];
 
+/* Fetch gender */
+$patientData = mysqli_fetch_assoc(
+    mysqli_query($conn, "SELECT gender FROM patients WHERE user_id = $user_id")
+);
+$gender = $patientData['gender'] ?? null;
+
+
 /* ================================
    DASHBOARD DATA
 ================================ */
@@ -26,7 +33,7 @@ $upcoming = mysqli_fetch_assoc(
          FROM appointments
          WHERE patient_id = $patient_id
          AND appointment_date >= CURDATE()
-         AND status IN ('Pending','Approved')"
+         AND status IN ('Approved', 'Check-in')"
     )
 )['total'];
 
@@ -39,13 +46,14 @@ $completed = mysqli_fetch_assoc(
          AND status = 'Completed'"
     )
 )['total'];
-
 $prenatal = mysqli_fetch_assoc(
     mysqli_query(
         $conn,
         "SELECT COUNT(*) total
-         FROM prenatal_records
-         WHERE patient_id = $patient_id"
+         FROM appointments
+         WHERE patient_id = $patient_id
+         AND type = 'prenatal'
+         AND status = 'Completed'"
     )
 )['total'];
 
@@ -54,13 +62,14 @@ $prenatal = mysqli_fetch_assoc(
 ================================ */
 $next = mysqli_query(
     $conn,
-    "SELECT appointment_date, appointment_time, status
+    "SELECT appointment_date, appointment_time, type, status
      FROM appointments
      WHERE patient_id = $patient_id
-     AND appointment_date >= CURDATE()
-     ORDER BY appointment_date ASC
+       AND appointment_date >= CURDATE()
+       AND status IN ('Approved', 'Check-in')
      LIMIT 1"
 );
+
 $nextAppointment = mysqli_fetch_assoc($next);
 ?>
 <!DOCTYPE html>
@@ -140,9 +149,8 @@ $nextAppointment = mysqli_fetch_assoc($next);
             font-weight: bold;
         }
 
-        .status.Pending { color: #f59e0b; }
-        .status.Approved { color: #0284c7; }
-        .status.Completed { color: #16a34a; }
+        .status.Check-in { color: #0284c7; }
+        .status.Approved  { color: #16a34a; }
     </style>
 </head>
 <body>
@@ -176,14 +184,16 @@ $nextAppointment = mysqli_fetch_assoc($next);
                     <p><?= $completed ?></p>
                 </div>
             </div>
-
-            <div class="card">
-                <div class="card-icon">🤰</div>
-                <div>
-                    <h4>Prenatal Visits</h4>
-                    <p><?= $prenatal ?></p>
+        <?php if (strtolower($gender) === 'female'): ?>
+                <div class="card">
+                    <div class="card-icon">🤰</div>
+                    <div>
+                        <h4>Completed Prenatal Visits</h4>
+                        <p><?= $prenatal ?></p>
+                    </div>
                 </div>
-            </div>
+        <?php endif; ?>
+
 
         </div>
 
@@ -192,8 +202,9 @@ $nextAppointment = mysqli_fetch_assoc($next);
             <h3>Next Appointment</h3>
 
             <?php if ($nextAppointment): ?>
+                <p><strong>Type:</strong> <?= strtoupper($nextAppointment['type']) ?></p>
                 <p><strong>Date:</strong> <?= $nextAppointment['appointment_date'] ?></p>
-                <p><strong>Time:</strong> <?= $nextAppointment['appointment_time'] ?></p>
+                <p><strong>Time of the Day:</strong> <?= strtoupper($nextAppointment['appointment_time']) ?></p>
                 <p>
                     <strong>Status:</strong>
                     <span class="status <?= $nextAppointment['status'] ?>">

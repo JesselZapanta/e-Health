@@ -116,6 +116,48 @@ $users = mysqli_query($conn, "SELECT user_id, full_name, email, role, status FRO
             justify-content:space-between;
             margin-top:15px;
         }
+
+        .btn {
+            padding:6px 12px;
+            border-radius:6px;
+            text-decoration:none;
+            font-size:14px;
+            cursor:pointer;
+        }
+
+        .btn-sm {
+            padding:4px 8px;
+            font-size:12px;
+        }
+
+        .btn-primary {
+            background:#3b82f6;
+            color:#fff;
+            border:none;
+        }
+
+        .btn-success {
+            background:#22c55e;
+            color:#fff;
+            border:none;
+        }
+
+        .btn-danger {
+            background:#ef4444;
+            color:#fff;
+            border:none;
+        }
+         /* EMAIL INVALID */
+        .email-input:invalid,
+        .email-input:focus:invalid {
+            border-color: #dc2626;
+        }
+
+        /* PASSWORD MISMATCH (OVERRIDES ui.css) */
+        input.input-error,
+        input.input-error:focus {
+            border-color: #dc2626;
+        }
     </style>
 </head>
 <body>
@@ -132,34 +174,52 @@ $users = mysqli_query($conn, "SELECT user_id, full_name, email, role, status FRO
 </div>
 
 <div class="card">
-<table>
-<thead>
-<tr>
-    <th>Name</th>
-    <th>Email</th>
-    <th>Role</th>
-    <th>Status</th>
-    <th style="width:120px;">Action</th>
-</tr>
-</thead>
-<tbody>
-<?php while ($u = mysqli_fetch_assoc($users)): ?>
-<tr>
-    <td><?= htmlspecialchars($u['full_name']) ?></td>
-    <td><?= htmlspecialchars($u['email']) ?></td>
-    <td><?= ucfirst($u['role']) ?></td>
-    <td>
-        <span class="status <?= $u['status'] ?>">
-            <?= ucfirst($u['status']) ?>
-        </span>
-    </td>
-    <td>
-        <a href="user_edit.php?id=<?= $u['user_id'] ?>" class="btn btn-success btn-sm">Edit</a>
-    </td>
-</tr>
-<?php endwhile; ?>
-</tbody>
-</table>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+        <div class="form-group" style="flex: 1; margin-right: 10px;">
+            <label>Search User</label>
+            <input type="text" id="searchInput" placeholder="Type something..." />
+        </div>
+
+        <div class="form-group">
+            <label>Filter by Role</label>
+            <select id="typeFilter">
+                <option value="all">All</option>
+                <option value="admin">Admin</option>
+                <option value="doctor">Doctor</option>
+                <option value="staff">Staff</option>
+                <option value="patient">Patient</option>
+            </select>
+        </div>
+    </div>
+
+    <table id="userTable">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th style="width:120px;">Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    <?php while ($u = mysqli_fetch_assoc($users)): ?>
+    <tr>
+        <td class="name"><?= htmlspecialchars($u['full_name']) ?></td>
+        <td class="email"><?= htmlspecialchars($u['email']) ?></td>
+        <td class="role"><?= $u['role'] ?></td>
+        <td>
+            <span class="status <?= $u['status'] ?>">
+                <?= ucfirst($u['status']) ?>
+            </span>
+        </td>
+        <td>
+            <a href="user_edit.php?id=<?= $u['user_id'] ?>" class="btn btn-success btn-sm">Edit</a>
+        </td>
+    </tr>
+    <?php endwhile; ?>
+    </tbody>
+    </table>
 </div>
 
 </main>
@@ -179,7 +239,7 @@ $users = mysqli_query($conn, "SELECT user_id, full_name, email, role, status FRO
 </div>
 
 <div class="form-group">
-    <input type="text" name="middle_initial" placeholder="Middle Initial" maxlength="1">
+    <input type="text" name="middle_initial" placeholder="Middle Name" >
 </div>
 
 <div class="form-group">
@@ -187,7 +247,7 @@ $users = mysqli_query($conn, "SELECT user_id, full_name, email, role, status FRO
 </div>
 
 <div class="form-group">
-    <input type="email" id="email" name="email" placeholder="Email Address" required>
+    <input type="email" id="email" name="email" class="email-input" placeholder="Email Address" required>
     <div class="error-text" id="emailError">Email must contain @</div>
 </div>
 
@@ -196,7 +256,7 @@ $users = mysqli_query($conn, "SELECT user_id, full_name, email, role, status FRO
 </div>
 
 <div class="form-group">
-    <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+    <input type="password" id="confirm" placeholder="Confirm Password" required>
     <div class="error-text" id="passwordError">Passwords do not match</div>
 </div>
 
@@ -204,7 +264,6 @@ $users = mysqli_query($conn, "SELECT user_id, full_name, email, role, status FRO
     <select name="role" required>
         <option value="doctor">Doctor</option>
         <option value="staff">Staff</option>
-        <option value="patient">Patient</option>
         <option value="admin">Admin</option>
     </select>
 </div>
@@ -253,6 +312,68 @@ function validateForm() {
 
     return valid;
 }
+
+// SEARCH & FILTER
+const searchInput = document.getElementById('searchInput');
+const typeFilter = document.getElementById('typeFilter');
+const tableBody = document.querySelector('#userTable tbody');
+
+function filterTable() {
+    const searchText = searchInput.value.toLowerCase();
+    const roleFilter = typeFilter.value.toLowerCase();
+
+    let anyVisible = false;
+
+    for (let row of tableBody.rows) {
+        const name = row.querySelector('.name').textContent.toLowerCase();
+        const email = row.querySelector('.email').textContent.toLowerCase();
+        const role = row.querySelector('.role').textContent.toLowerCase();
+
+        const matchesSearch = name.includes(searchText) || email.includes(searchText);
+        const matchesRole = roleFilter === 'all' || role === roleFilter;
+
+        if (matchesSearch && matchesRole) {
+            row.style.display = '';
+            anyVisible = true;
+        } else {
+            row.style.display = 'none';
+        }
+    }
+
+    // No data found row
+    let noDataRow = tableBody.querySelector('.no-data-row');
+    if (!noDataRow) {
+        noDataRow = document.createElement('tr');
+        noDataRow.classList.add('no-data-row');
+        noDataRow.innerHTML = '<td colspan="5" style="text-align:center; padding:10px;">No data found.</td>';
+        tableBody.appendChild(noDataRow);
+    }
+    noDataRow.style.display = anyVisible ? 'none' : '';
+}
+
+searchInput.addEventListener('input', filterTable);
+typeFilter.addEventListener('change', filterTable);
+
+
+/* PASSWORD MATCH */
+const password = document.getElementById('password');
+const confirm  = document.getElementById('confirm');
+
+function checkPasswordMatch() {
+    if (!password.value || !confirm.value) {
+        password.classList.remove('input-error');
+        confirm.classList.remove('input-error');
+        return;
+    }
+
+    const mismatch = password.value !== confirm.value;
+
+    password.classList.toggle('input-error', mismatch);
+    confirm.classList.toggle('input-error', mismatch);
+}
+
+password.addEventListener('input', checkPasswordMatch);
+confirm.addEventListener('input', checkPasswordMatch);
 </script>
 
 </body>
